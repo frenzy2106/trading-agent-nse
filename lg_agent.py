@@ -24,7 +24,6 @@ from typing import Annotated
 
 from dotenv import load_dotenv
 from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_groq import ChatGroq
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import START, StateGraph
 from langgraph.graph.message import add_messages
@@ -32,10 +31,12 @@ from langgraph.prebuilt import ToolNode, tools_condition
 from typing_extensions import TypedDict
 
 from context_loader import build_context
+from llm_factory import get_llm, get_provider_and_model
 from persistence import build_trace, parse_header, save_run
 from tools.tool_definitions import (
     get_fundamentals_snapshot,
     get_macro_snapshot,
+    get_news_and_earnings,
     get_technical_snapshot,
 )
 from prompts import SYSTEM_PROMPT
@@ -50,7 +51,12 @@ logger = logging.getLogger("lg_agent")
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
-TOOLS = [get_technical_snapshot, get_macro_snapshot, get_fundamentals_snapshot]
+TOOLS = [
+    get_technical_snapshot,
+    get_macro_snapshot,
+    get_fundamentals_snapshot,
+    get_news_and_earnings,
+]
 
 
 class AgentState(TypedDict):
@@ -58,12 +64,7 @@ class AgentState(TypedDict):
 
 
 def build_graph():
-    api_key = os.getenv("GROQ_API_KEY")
-    if not api_key:
-        sys.exit("ERROR: GROQ_API_KEY not set in .env")
-
-    model = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
-    llm = ChatGroq(model=model, api_key=api_key).bind_tools(TOOLS)
+    llm = get_llm(tools=TOOLS)
 
     def chat_node(state: AgentState):
         messages = [SystemMessage(content=SYSTEM_PROMPT)] + state["messages"]
@@ -86,7 +87,7 @@ def _compose_message(question: str, context_text: str) -> str:
     return f"{context_text}\n\n{question}"
 
 
-def _run_one(app, model: str, question: str, context_text: str, thread_id: str):
+def _run_one(app, provider: str, model: str, question: str, context_text: str, thread_id: str):
     run_config = {"configurable": {"thread_id": thread_id}}
     composed = _compose_message(question, context_text)
 
@@ -113,7 +114,7 @@ def _run_one(app, model: str, question: str, context_text: str, thread_id: str):
         question=question,
         report=report,
         trace=trace,
-        model=model,
+        model=f"{provider}/{model}",
         rating=header.get("rating"),
         confidence=header.get("confidence"),
     )
@@ -153,11 +154,11 @@ if __name__ == "__main__":
     args = _build_argparser().parse_args()
 
     app = build_graph()
-    model = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
+    provider, model = get_provider_and_model()
 
     print("\n=== NSE Trading Analyst ===")
     print("NOT FINANCIAL ADVICE. For educational and research purposes only.")
-    print(f"Model: {model}")
+    print(f"Provider: {provider}  |  Model: {model}")
 
     # Build context once per CLI invocation. Macro events apply to all runs in this session.
     context_block = build_context(
@@ -178,7 +179,7 @@ if __name__ == "__main__":
         print(f"Context loaded: {', '.join(bits)} ({len(context_text)} chars)")
 
     if args.question:
-        _run_one(app, model, args.question, context_text, thread_id="session-1")
+        _run_one(app, provider, model, args.question, context_text, thread_id="session-1")
         sys.exit(0)
 
     print("Ask about any NSE stock, e.g. 'Should I buy RELIANCE for a 3-month hold?'")
@@ -195,4 +196,4 @@ if __name__ == "__main__":
             break
 
         run_idx += 1
-        _run_one(app, model, user_input, context_text, thread_id=f"session-{run_idx}")
+        _run_one(app, provider, model, user_input, context_text, thread_id=f"session-{run_idx}")

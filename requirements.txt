@@ -4,7 +4,8 @@ pandas>=2.3.2
 pandas-ta
 python-dotenv
 langgraph
-langchain-groq
 langchain-core
+langchain-openai
+langchain-groq
 pypdf
 trafilatura

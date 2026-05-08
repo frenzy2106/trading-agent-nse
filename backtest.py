@@ -27,7 +27,6 @@ import pandas as pd
 from dotenv import load_dotenv
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.tools import tool
-from langchain_groq import ChatGroq
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import START, StateGraph
 from langgraph.graph.message import add_messages
@@ -36,7 +35,9 @@ from typing_extensions import Annotated, TypedDict
 
 from backtest_prompts import SYSTEM_PROMPT_BACKTEST
 from kite_login import get_kite_client
+from llm_factory import get_llm, get_provider_and_model
 from persistence import build_trace, parse_header
+from tools.macro import get_macro_snapshot as _macro
 from tools.technical import (
     TickerNotFoundError,
     get_technical_snapshot as _technical,
@@ -96,14 +97,33 @@ def _make_technical_tool(as_of_date: date):
     return get_technical_snapshot
 
 
-def build_backtest_graph(as_of_date: date, model: str, api_key: str):
+def _make_macro_tool(as_of_date: date):
+    """Wrap macro snapshot with as_of_date frozen in. NIFTY 50 + sector + size-bucket benchmarks."""
+
+    @tool
+    def get_macro_snapshot(ticker: str) -> str:
+        """Benchmark a stock against NIFTY 50, its sector index, and its size-bucket index as of a fixed historical date."""
+        try:
+            return json.dumps(_macro(ticker, as_of_date=as_of_date), default=str)
+        except TickerNotFoundError as e:
+            return json.dumps({
+                "error": f"Ticker '{e.ticker}' not found on NSE.",
+                "kind": "ticker_not_found",
+            })
+        except Exception as e:
+            return json.dumps({
+                "error": f"{type(e).__name__}: {e}",
+                "kind": "unexpected",
+            })
+
+    return get_macro_snapshot
+
+
+def build_backtest_graph(as_of_date: date):
     technical_tool = _make_technical_tool(as_of_date)
-    tools = [technical_tool]
-    llm = ChatGroq(
-        model=model,
-        api_key=api_key,
-        temperature=0,
-    ).bind_tools(tools)
+    macro_tool = _make_macro_tool(as_of_date)
+    tools = [technical_tool, macro_tool]
+    llm = get_llm(tools=tools, temperature=0)
 
     def chat_node(state: AgentState):
         messages = [SystemMessage(content=SYSTEM_PROMPT_BACKTEST)] + state["messages"]
@@ -176,8 +196,8 @@ def forward_returns(df: pd.DataFrame, test_date: date, windows: list[int]) -> di
 # ── Run a single (ticker, date) pair ────────────────────────────────────────
 
 
-def run_one(ticker: str, test_date: date, model: str, api_key: str, out_dir: Path) -> dict:
-    app = build_backtest_graph(test_date, model, api_key)
+def run_one(ticker: str, test_date: date, provider: str, model: str, out_dir: Path) -> dict:
+    app = build_backtest_graph(test_date)
     config = {"configurable": {"thread_id": f"{ticker}-{test_date}"}}
 
     user_msg = (
@@ -210,7 +230,7 @@ def run_one(ticker: str, test_date: date, model: str, api_key: str, out_dir: Pat
         json.dumps({
             "ticker": ticker,
             "test_date": test_date.isoformat(),
-            "model": model,
+            "model": f"{provider}/{model}",
             "rating": header["rating"] if header else None,
             "confidence": header["confidence"] if header else None,
             **trace,
@@ -232,16 +252,12 @@ def run_one(ticker: str, test_date: date, model: str, api_key: str, out_dir: Pat
 
 
 def main():
-    api_key = os.getenv("GROQ_API_KEY")
-    if not api_key:
-        sys.exit("ERROR: GROQ_API_KEY not set in .env")
-
-    model = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
+    provider, model = get_provider_and_model()
     run_id = datetime.now().strftime("%Y%m%d-%H%M%S")
     out_dir = Path("backtest") / run_id
     out_dir.mkdir(parents=True, exist_ok=True)
     print(f"\n=== Backtest run {run_id} ===")
-    print(f"Model: {model} (temperature=0)")
+    print(f"Provider: {provider} | Model: {model} (temperature=0)")
     print(f"Tickers: {len(NIFTY_10)} | Dates: {len(TEST_DATES)} | Total calls: {len(NIFTY_10) * len(TEST_DATES)}")
     print(f"Output: {out_dir}\n")
 
@@ -264,7 +280,7 @@ def main():
         for ticker in NIFTY_10:
             i += 1
             print(f"  [{i:>2}/{total}] {ticker} @ {test_date}...", end=" ", flush=True)
-            row = run_one(ticker, test_date, model, api_key, out_dir)
+            row = run_one(ticker, test_date, provider, model, out_dir)
             row.update(forward_returns(history.get(ticker, pd.DataFrame()), test_date, FORWARD_WINDOWS))
             rows.append(row)
             tag = f"{row.get('rating') or 'ERR'}/{row.get('confidence') or '-'}"

@@ -15,6 +15,7 @@ from langchain_core.tools import tool
 
 from tools.fundamentals import get_fundamentals_snapshot as _fundamentals
 from tools.macro import get_macro_snapshot as _macro
+from tools.news import get_news_and_earnings as _news
 from tools.technical import TickerNotFoundError
 from tools.technical import get_technical_snapshot as _technical
 
@@ -86,6 +87,36 @@ def get_macro_snapshot(ticker: str) -> str:
     """
     try:
         return json.dumps(_macro(ticker), default=str)
+    except (TickerNotFoundError, TokenException) as e:
+        return _serialise_error(e)
+    except Exception as e:
+        return _serialise_error(e)
+
+
+@tool
+def get_news_and_earnings(ticker: str) -> str:
+    """
+    Fetch upcoming + recent earnings dates and recent news headlines for an
+    NSE-listed stock.
+
+    Returns:
+      - next_earnings_date + days_to_earnings (if available)
+      - eps_estimate (consensus, if available)
+      - last_earnings_date + days_since_last_earnings + last_eps_surprise_pct
+      - recent_news: top 5 headlines with title, short summary, date, provider
+
+    Use this to surface timing risks (e.g. earnings within 7 days = avoid fresh
+    positions until after the print) and stock-specific news the price/indicator
+    data can't see. The LLM should filter relevance — yfinance sometimes returns
+    market-wide headlines for large-caps; ignore items not specific to the company.
+
+    On error, returns JSON like {"error": "..."}.
+
+    Args:
+        ticker: NSE ticker symbol, e.g. RELIANCE, TCS, HDFCBANK
+    """
+    try:
+        return json.dumps(_news(ticker), default=str)
     except (TickerNotFoundError, TokenException) as e:
         return _serialise_error(e)
     except Exception as e:
