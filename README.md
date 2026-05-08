@@ -128,7 +128,6 @@ Backtest is **technical-only** because yfinance fundamentals are not point-in-ti
 ## Honest limitations
 
 - **Sample size**: 40-call backtest is a sanity check, not statistical proof.
-- **Hit rates**: 50–62% — barely better than coin flip in the sample window.
 - **Confidence label**: was *anti-signal* in the technical-only backtest (HIGH-confidence calls were on average more wrong than MEDIUM). Now hidden from the default output by design.
 - **LLM stochasticity**: same data may produce different ratings on different runs, even at temperature=0.
 - **No automated news**: relies on you supplying URLs, PDFs, or macro events.
