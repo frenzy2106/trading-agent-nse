@@ -1,0 +1,27 @@
+# secrets
+.env
+.kite_session.json
+
+# python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+
+# reports (committed selectively via samples/)
+reports/
+backtest/
+cache/
+
+# editor / tooling
+.vscode/
+.idea/
+.claude/
+*.swp
+
+# stray data dumps
+*.csv

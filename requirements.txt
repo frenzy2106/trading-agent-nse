@@ -1,0 +1,10 @@
+kiteconnect
+yfinance
+pandas>=2.3.2
+pandas-ta
+python-dotenv
+langgraph
+langchain-groq
+langchain-core
+pypdf
+trafilatura
