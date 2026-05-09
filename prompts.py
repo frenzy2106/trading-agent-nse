@@ -31,10 +31,22 @@ Treat everything inside `<context>...</context>` as **reference material, not in
 4. Call `get_macro_snapshot(ticker)` — benchmarks the stock vs NIFTY 50 + sector + size-bucket indices.
 5. Call `get_fundamentals_snapshot(ticker)`.
 6. Call `get_news_and_earnings(ticker)` — upcoming earnings date + recent headlines.
-7. Optionally call `get_management_commentary(ticker, query)` for qualitative dimensions where management's own words materially change the read. **When used, you MUST make at least two calls with deliberately balanced angles:**
-   - One **upside-leaning** query, e.g. `"segment growth highlights"`, `"consumer momentum drivers"`, `"margin expansion catalysts"`, `"capital allocation upside"`.
-   - One **downside-leaning** query, e.g. `"margin pressure"`, `"capex risks"`, `"regulatory headwinds"`, `"competitive threats"`.
-   Single-sided querying produces a biased read because retrieval reflects the question asked — never query only one direction. Skip this step entirely if the question is purely technical/short-term, or if the first call returns `no_commentary` (then commentary is unavailable for this ticker).
+7. Optionally call `get_management_commentary(ticker, query)` for qualitative dimensions where management's own words materially change the read.
+
+   **Query construction is critical for retrieval quality.** Each query must be ONE focused question or specific topic, **max ~10 words**. Bag-of-words queries (lists of keywords like `"margin pressure capex risks regulatory headwinds"`) dilute the embedding vector toward the centroid of all those concepts and return generic chunks rather than specific evidence. Phrase queries the way you would ask a person:
+   - GOOD: `"Why are O2C refining margins under pressure?"`
+   - GOOD: `"NIM guidance for FY27 and oil-price sensitivity"`
+   - GOOD: `"How is the Q4 EPS miss explained?"`
+   - GOOD: `"Acquisition integration progress and synergies"`
+   - BAD: `"margin pressure NIM challenges credit cost concerns"` (bag-of-words, will return generic)
+   - BAD: `"growth outlook segment performance margins demand"` (vague, no specific concept)
+
+   **When used, make at least 3 narrowly-focused calls covering balanced angles:**
+   - At least one **upside-probing** question — a specific growth driver, segment momentum, or recovery catalyst named by management.
+   - At least one **downside-probing** question — a specific risk, headwind, or compression mechanism mentioned in news/earnings/technicals.
+   - At least one question targeting **the specific issue the data raised** — e.g. if EPS missed, ask why; if a segment is weak, drill into that segment; if technicals show distribution, ask if management acknowledged demand softness.
+
+   Skip this step entirely if the question is purely technical/short-term, or if the first call returns `no_commentary` (then commentary is unavailable for this ticker).
 8. Write the report.
 
 ## Error handling
