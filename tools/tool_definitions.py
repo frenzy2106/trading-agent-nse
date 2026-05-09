@@ -13,6 +13,7 @@ import logging
 from kiteconnect.exceptions import TokenException
 from langchain_core.tools import tool
 
+from tools.analyst import get_analyst_consensus as _analyst
 from tools.commentary import get_management_commentary as _commentary
 from tools.fundamentals import get_fundamentals_snapshot as _fundamentals
 from tools.macro import get_macro_snapshot as _macro
@@ -120,6 +121,33 @@ def get_news_and_earnings(ticker: str) -> str:
         return json.dumps(_news(ticker), default=str)
     except (TickerNotFoundError, TokenException) as e:
         return _serialise_error(e)
+    except Exception as e:
+        return _serialise_error(e)
+
+
+@tool
+def get_analyst_consensus(ticker: str) -> str:
+    """
+    Fetch sell-side analyst consensus for an NSE-listed stock from yfinance.
+
+    Returns price targets (mean, median, high, low, current, num_analysts,
+    implied_upside_to_mean_pct, coverage label), and recommendation distribution
+    (strong_buy / buy / hold / sell / strong_sell counts plus a consensus key
+    like 'buy' / 'strong_buy' / 'hold' / 'sell').
+
+    Use to benchmark the agent's data-only verdict against the street consensus
+    and to anchor a 12-month bull-case price reference. Note caveats:
+      - Indian sell-side skews bullish (~70% buy/hold, ~5% sell typical)
+      - Targets are 12-month, not horizon-matched — only a fraction plays out in 3 months
+      - Coverage is patchy on small/mid-caps; <5 analysts = "thin", treat with low weight
+
+    On error, returns JSON like {"error": "..."}.
+
+    Args:
+        ticker: NSE ticker symbol, e.g. RELIANCE, TCS, HDFCBANK
+    """
+    try:
+        return json.dumps(_analyst(ticker), default=str)
     except Exception as e:
         return _serialise_error(e)
 

@@ -34,6 +34,7 @@ from context_loader import build_context
 from llm_factory import get_llm, get_provider_and_model
 from persistence import build_trace, parse_header, save_run
 from tools.tool_definitions import (
+    get_analyst_consensus,
     get_fundamentals_snapshot,
     get_macro_snapshot,
     get_management_commentary,
@@ -57,6 +58,7 @@ TOOLS = [
     get_macro_snapshot,
     get_fundamentals_snapshot,
     get_news_and_earnings,
+    get_analyst_consensus,
     get_management_commentary,
 ]
 
