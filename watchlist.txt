@@ -1,0 +1,13 @@
+# NSE tickers, one per line. Lines starting with `#` and blank lines are ignored.
+# Edit this file to add/remove names you want scanned.
+
+RELIANCE
+TCS
+HDFCBANK
+ICICIBANK
+INFY
+HINDUNILVR
+ITC
+LUPIN
+SUNPHARMA
+ANGELONE
