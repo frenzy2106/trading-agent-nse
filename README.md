@@ -61,6 +61,10 @@ python lg_agent.py "Should I buy ETERNAL?" \
 # Multiple of each
 python lg_agent.py "..." --pdf a.pdf --pdf b.pdf --url x.com --url y.com
 
+# Markdown sources work too (e.g. concall transcripts you've saved as .md)
+python lg_agent.py "Should I buy RELIANCE for a 3-month hold?" \
+    --md data/concalls/RELIANCE/q4-earnings-call.md
+
 # Skip the persistent macro events log for this run
 python lg_agent.py "..." --no-macro
 
@@ -71,6 +75,39 @@ python lg_agent.py
 Each run produces:
 - `reports/<TICKER>/<DATE>.md` — the markdown report
 - `reports/<TICKER>/<DATE>.trace.json` — tool calls (with truncated responses), token usage, latency, model
+
+---
+
+## Management commentary (RAG)
+
+For qualitative dimensions — margin guidance, capex priorities, segment outlook, capital allocation — the agent has an optional `get_management_commentary` tool backed by a local Chroma index over earnings call transcripts.
+
+### Populate the corpus
+
+Drop transcripts here:
+
+```
+data/concalls/<TICKER>/<filename>.{md,pdf}
+```
+
+Sources I've used: company IR pages (most large-caps publish concall transcript PDFs), BSE filings (search "Analyst Meet / Concall Transcript"), or your own markdown.
+
+### Build the index
+
+```bash
+python -m ingest.build_concall_index             # all tickers in data/concalls/
+python -m ingest.build_concall_index RELIANCE    # one ticker
+```
+
+The script chunks each transcript (1000 chars / 150 overlap), embeds with `sentence-transformers/all-MiniLM-L6-v2` (~80MB downloaded on first run, CPU-only), and upserts to Chroma at `data/vectorstore/`. Idempotent — re-running replaces existing chunks per file.
+
+The `data/` directory is gitignored. Corpus and vectorstore stay local.
+
+### How the agent uses it
+
+When a question warrants qualitative input, the LLM issues **two queries** — one upside-leaning, one downside-leaning, enforced by the system prompt — and gets the top-5 semantically matching chunks per query, filtered to the last 365 days. Quotes must cite source verbatim. If no commentary is indexed for the ticker, the tool returns `no_commentary` and the agent says "management commentary unavailable" rather than fabricating quotes.
+
+Single-sided querying biases retrieval toward whichever case the agent was already considering — this is why both directions are mandatory.
 
 ---
 
@@ -98,9 +135,11 @@ user input + optional context (PDFs / URLs / text / macro events log)
     ▼
 LangGraph ReAct agent (Groq, default openai/gpt-oss-120b)
     │
-    ├── get_technical_snapshot(ticker)    ← Kite OHLCV → pandas-ta indicators
-    ├── get_macro_snapshot(ticker)        ← NIFTY 50 + sector index + size-bucket index
-    └── get_fundamentals_snapshot(ticker) ← yfinance ratios + 4-quarter trend
+    ├── get_technical_snapshot(ticker)     ← Kite OHLCV → pandas-ta indicators
+    ├── get_macro_snapshot(ticker)         ← NIFTY 50 + sector index + size-bucket index
+    ├── get_fundamentals_snapshot(ticker)  ← yfinance ratios + 4-quarter trend
+    ├── get_news_and_earnings(ticker)      ← upcoming earnings + recent headlines
+    └── get_management_commentary(t, q, k) ← optional RAG over indexed concall transcripts
     │
     ▼
 Structured markdown report + trace JSON
@@ -164,7 +203,12 @@ Current state, planned work, prompt iteration history, and backtest analysis are
 │   ├── technical.py          # OHLCV + indicators (RSI, MACD, SMA, OBV, VWMA, ATR, Bollinger)
 │   ├── fundamentals.py       # yfinance valuation + profitability + leverage + earnings trend
 │   ├── macro.py              # NIFTY 50, sector index, size-bucket index benchmarking
+│   ├── news.py               # upcoming earnings + recent headlines (yfinance)
+│   ├── commentary.py         # RAG retrieval over Chroma-indexed concall transcripts
 │   └── tool_definitions.py   # @tool wrappers with structured error responses
+├── ingest/
+│   └── build_concall_index.py # chunk + embed + upsert concall transcripts to Chroma
+├── data/                     # gitignored — concall corpus + Chroma vectorstore (regenerate locally)
 ├── macro_events.md           # persistent events log (you edit this directly)
 ├── requirements.txt
 └── .env.example
