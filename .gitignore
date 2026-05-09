@@ -26,3 +26,9 @@ screener/
 
 # stray data dumps
 *.csv
+
+# local html scratch (explainers, notes, scratch pages)
+*.html
+
+# RAG corpus + Chroma vectorstore (regenerate locally via ingest/build_concall_index.py)
+data/

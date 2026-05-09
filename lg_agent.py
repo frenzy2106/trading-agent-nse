@@ -36,6 +36,7 @@ from persistence import build_trace, parse_header, save_run
 from tools.tool_definitions import (
     get_fundamentals_snapshot,
     get_macro_snapshot,
+    get_management_commentary,
     get_news_and_earnings,
     get_technical_snapshot,
 )
@@ -56,6 +57,7 @@ TOOLS = [
     get_macro_snapshot,
     get_fundamentals_snapshot,
     get_news_and_earnings,
+    get_management_commentary,
 ]
 
 
@@ -141,6 +143,7 @@ def _build_argparser() -> argparse.ArgumentParser:
     )
     p.add_argument("--context", help="Free-text context to factor in")
     p.add_argument("--pdf", action="append", default=[], help="Path to a PDF source (repeatable)")
+    p.add_argument("--md", action="append", default=[], help="Path to a markdown source (repeatable)")
     p.add_argument("--url", action="append", default=[], help="URL of an article source (repeatable)")
     p.add_argument(
         "--no-macro",
@@ -165,6 +168,7 @@ if __name__ == "__main__":
         free_text=args.context,
         pdfs=args.pdf,
         urls=args.url,
+        mds=args.md,
         include_macro=not args.no_macro,
     )
     context_text = context_block.render()

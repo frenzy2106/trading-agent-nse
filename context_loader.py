@@ -93,6 +93,22 @@ def load_pdf(pdf_path: str) -> str:
     return _truncate(text)
 
 
+def load_md(md_path: str) -> str:
+    """Read a markdown file as plain text. Strips leading YAML frontmatter. Truncated to SOURCE_CHAR_CAP."""
+    p = Path(md_path)
+    if not p.exists():
+        raise FileNotFoundError(f"Markdown not found: {md_path}")
+    text = p.read_text(encoding="utf-8")
+    if text.startswith("---\n"):
+        end = text.find("\n---\n", 4)
+        if end != -1:
+            text = text[end + 5:]
+    text = text.strip()
+    if not text:
+        raise ValueError(f"Markdown '{md_path}' is empty after frontmatter strip")
+    return _truncate(text)
+
+
 def load_url(url: str) -> str:
     """Fetch a URL and extract main article text. Truncated to SOURCE_CHAR_CAP."""
     import trafilatura
@@ -155,6 +171,7 @@ def build_context(
     free_text: str | None = None,
     pdfs: list[str] | None = None,
     urls: list[str] | None = None,
+    mds: list[str] | None = None,
     include_macro: bool = True,
     macro_lookback_days: int = MACRO_LOOKBACK_DAYS,
 ) -> ContextBlock:
@@ -176,6 +193,14 @@ def build_context(
             logger.info("loaded pdf %s (%d chars)", pdf, len(body))
         except Exception as e:
             logger.warning("pdf load failed for %s: %s", pdf, e)
+
+    for md in mds or []:
+        try:
+            body = load_md(md)
+            block.sources.append((f"md:{Path(md).name}", body))
+            logger.info("loaded md %s (%d chars)", md, len(body))
+        except Exception as e:
+            logger.warning("md load failed for %s: %s", md, e)
 
     for url in urls or []:
         try:

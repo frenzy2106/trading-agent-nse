@@ -9,3 +9,5 @@ langchain-openai
 langchain-groq
 pypdf
 trafilatura
+chromadb
+sentence-transformers

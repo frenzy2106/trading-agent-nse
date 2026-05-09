@@ -13,6 +13,7 @@ import logging
 from kiteconnect.exceptions import TokenException
 from langchain_core.tools import tool
 
+from tools.commentary import get_management_commentary as _commentary
 from tools.fundamentals import get_fundamentals_snapshot as _fundamentals
 from tools.macro import get_macro_snapshot as _macro
 from tools.news import get_news_and_earnings as _news
@@ -119,6 +120,35 @@ def get_news_and_earnings(ticker: str) -> str:
         return json.dumps(_news(ticker), default=str)
     except (TickerNotFoundError, TokenException) as e:
         return _serialise_error(e)
+    except Exception as e:
+        return _serialise_error(e)
+
+
+@tool
+def get_management_commentary(ticker: str, query: str, k: int = 5) -> str:
+    """
+    Retrieve top-k quotes from indexed earnings call transcripts (last ~12 months)
+    for an NSE-listed stock, semantically matched to your query.
+
+    USE for qualitative dimensions where management's own words add value:
+      - growth / margin / capex guidance
+      - characterization of demand environment, segment momentum
+      - capital allocation intent (buybacks, debt paydown, dividends)
+      - explicit risks management names
+
+    DO NOT use for numbers — get_fundamentals_snapshot has those. Concalls are
+    management's own framing; treat returned quotes as INPUT, not GROUND TRUTH.
+
+    On error, returns JSON like {"error": "...", "kind": "no_commentary"} —
+    say "management commentary unavailable" and do not invent quotes.
+
+    Args:
+        ticker: NSE ticker symbol, e.g. RELIANCE
+        query: a focused question, e.g. "margin guidance for FY26", "capex priorities"
+        k: number of chunks to return (default 5)
+    """
+    try:
+        return json.dumps(_commentary(ticker, query, k), default=str)
     except Exception as e:
         return _serialise_error(e)
 
