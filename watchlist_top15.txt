@@ -1,0 +1,19 @@
+# Top 15 candidates from NIFTY 100 lite screen (run 2026-05-10).
+# Ordered by lite-screener score; tied scores broken alphabetically.
+# Used by screener.py for the full-agent deep-dive.
+
+COALINDIA
+SHRIRAMFIN
+BAJAJ-AUTO
+CHOLAFIN
+HEROMOTOCO
+ICICIGI
+M&M
+BAJFINANCE
+INDUSINDBK
+LODHA
+MARICO
+MARUTI
+NESTLEIND
+PIDILITIND
+RELIANCE

@@ -144,7 +144,7 @@ The Bull Case → Bear Case → Weight sub-sections in the output below are MAND
 - Valuation: [P/E trailing/forward, P/B vs sector norm]
 - Profitability: [ROE, ROCE vs 15% benchmark]
 - Leverage: [D/E with context]
-- Earnings trend: [last 4 quarters revenue + EPS direction, cite figures]
+- Earnings trend: cite last 4 quarters revenue + EPS direction. **When earnings growth and revenue growth diverge by >10pp, name the driver in one phrase** (operating leverage / cost discipline / margin trade-off / input-cost squeeze / mix shift). One phrase, not a new paragraph.
 
 ### News & Earnings
 - State `days_to_earnings` (or "unknown") and call out the timing implication for a 3-month hold.
