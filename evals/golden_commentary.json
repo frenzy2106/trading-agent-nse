@@ -1,0 +1,65 @@
+[
+  {
+    "id": "RELIANCE-growth-01",
+    "ticker": "RELIANCE",
+    "query": "Outlook for FY27 retail and Jio segments",
+    "reference": "Retail posted its highest-ever quarterly revenue of around Rs 98,000 crore in Q4, growing 11% YoY (14% adjusted for the RCPL demerger). Jio's EBITDA margin reached 51.8%. Retail margins are being compressed by quick-commerce investments but volume growth is strong.",
+    "must_contain_themes": ["retail", "Jio", "EBITDA", "98,000"]
+  },
+  {
+    "id": "RELIANCE-margin-01",
+    "ticker": "RELIANCE",
+    "query": "O2C refining margins under pressure from elevated crude",
+    "reference": "Downstream refining margins remain under pressure. Management noted the crude market is oversupplied at pre-conflict fundamentals. Brent year-average reference for FY26 planning was around 70 dollars per barrel; current spikes reflect Iran-US conflict premium.",
+    "must_contain_themes": ["O2C", "downstream", "refining", "crude"]
+  },
+  {
+    "id": "RELIANCE-segment-01",
+    "ticker": "RELIANCE",
+    "query": "Capex plans and new energy ramp-up timelines",
+    "reference": "First solar gigafactory commissioning is approaching with a 12-15 month timeline from the Q3 call. Green ammonia contract signed with Samsung C&T. New energy is positioned as a multi-year buildout, not a near-term revenue driver.",
+    "must_contain_themes": ["new energy", "solar", "giga", "capex"]
+  },
+  {
+    "id": "TCS-growth-01",
+    "ticker": "TCS",
+    "query": "FY27 growth outlook and order book trajectory",
+    "reference": "CEO K Krithivasan stated management is quite positive about FY27, particularly international growth. Q4 TCV order book reached 12 billion dollars including three mega deals. Annualized AI revenues surpassed 2.3 billion dollars in Q4.",
+    "must_contain_themes": ["FY27", "international", "order book", "AI"]
+  },
+  {
+    "id": "TCS-margin-01",
+    "ticker": "TCS",
+    "query": "Operating margin trajectory and cost discipline",
+    "reference": "Full-year FY26 operating margin reached 25%, a 4-year high, expanded 70 basis points YoY. Management targets 26% plus margins longer term and says margin and growth are not conflicting. Annual wage hikes will be a Q1 FY27 headwind.",
+    "must_contain_themes": ["margin", "25", "growth", "wage"]
+  },
+  {
+    "id": "TCS-segment-01",
+    "ticker": "TCS",
+    "query": "US tariff impact on Manufacturing vertical client spending",
+    "reference": "Management flagged tariff volatility and recalibration of EV demand specifically in the Manufacturing vertical. Client caution is geo-specific (travel/transportation and Middle East), not broad-based across all geos. FY26 constant currency revenue declined 2.4% YoY despite record order book.",
+    "must_contain_themes": ["tariff", "Manufacturing", "constant currency", "client"]
+  },
+  {
+    "id": "INOXINDIA-growth-01",
+    "ticker": "INOXINDIA",
+    "query": "FY27 revenue growth guidance and order book size",
+    "reference": "FY26 order book closing guidance is around Rs 1,700 crore. FY27 revenue growth guidance is 18-20%. Approximately 63% of the order book is export-oriented, providing currency-driven margin tailwind.",
+    "must_contain_themes": ["order book", "FY27", "growth", "export"]
+  },
+  {
+    "id": "INOXINDIA-margin-01",
+    "ticker": "INOXINDIA",
+    "query": "Currency tailwind on export margins from INR weakness",
+    "reference": "INR has weakened approximately 25% vs EUR and 10-12% vs USD. With 63% export order book, this provides a margin tailwind on new orders dispatched from Q4 onward. Management expects slight margin improvement from currency translation.",
+    "must_contain_themes": ["INR", "export", "currency", "margin"]
+  },
+  {
+    "id": "INOXINDIA-segment-01",
+    "ticker": "INOXINDIA",
+    "query": "Beverage keg plant capacity utilization and Heineken contracts",
+    "reference": "Keg plant is running at approximately 23% utilization (~70,000 kegs on order against 3 lakh annual capacity). Sample approvals from Heineken, AB InBev, Asahi and Carlsberg are pending. Management hopes for 80,000-100,000 orders by March-end.",
+    "must_contain_themes": ["keg", "Heineken", "capacity", "utilization"]
+  }
+]

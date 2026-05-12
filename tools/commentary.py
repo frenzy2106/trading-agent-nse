@@ -16,6 +16,11 @@ Recency-filtered to last 365 days to avoid stale guidance.
 Returns {"error": "no_commentary_indexed", "kind": "no_commentary", ...}
 when nothing matches — the agent must say "unavailable" rather than
 fabricate quotes.
+
+Note: a hybrid bi+cross scoring variant was tried (see git history) and
+regressed mean context precision from 0.559 → 0.248 on the golden eval. The
+cross-encoder was correctly suppressing weak bi-encoder candidates on most
+queries; the hybrid let those weak candidates back in. Reverted.
 """
 
 import logging

@@ -12,3 +12,8 @@ trafilatura
 chromadb
 sentence-transformers
 feedparser
+
+# RAG evaluation + observability
+ragas
+langsmith
+datasets

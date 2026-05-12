@@ -32,3 +32,6 @@ screener/
 
 # RAG corpus + Chroma vectorstore (regenerate locally via ingest/build_concall_index.py)
 data/
+
+# Eval run outputs (golden dataset itself is tracked; only outputs ignored)
+evals/results/

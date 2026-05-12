@@ -28,6 +28,16 @@ CONCALLS_DIR = Path("data/concalls")
 CHUNK_CHARS = 1000
 CHUNK_OVERLAP = 150
 EMBED_BATCH = 64
+# How far back from the ideal endpoint to search for a clean split.
+# 200 chars ≈ 30-40 words — generous enough to find a paragraph/sentence break
+# without making chunks much shorter than CHUNK_CHARS.
+CHUNK_SEARCH_WINDOW = 200
+
+# Split-point patterns in priority order (best → worst).
+# Paragraph break beats sentence end beats word boundary beats hard cut.
+_PARAGRAPH_BREAK_RE = re.compile(r"\n\s*\n")
+_SENTENCE_END_RE = re.compile(r"[.!?][\s\n]")
+_WORD_BREAK_RE = re.compile(r"\s")
 
 _MONTHS = {
     m: i
@@ -79,19 +89,66 @@ def extract_doc_date(text: str, fallback: date) -> str:
         return fallback.isoformat()
 
 
-def chunk_text(text: str, size: int = CHUNK_CHARS, overlap: int = CHUNK_OVERLAP) -> list[str]:
-    """Sliding-window character chunker. Concall paragraphs are too long for paragraph-based splits."""
+def chunk_text(
+    text: str,
+    size: int = CHUNK_CHARS,
+    overlap: int = CHUNK_OVERLAP,
+    search_window: int = CHUNK_SEARCH_WINDOW,
+) -> list[str]:
+    """Sentence-aware sliding-window chunker.
+
+    Walks forward by `size` chars, then looks back up to `search_window` chars
+    for a clean split point. Tries in priority order:
+      1. Paragraph break (\\n\\n)  — preserves topical coherence
+      2. Sentence end (.!? + ws)  — preserves grammatical units
+      3. Word boundary (whitespace) — avoids mid-word splits
+      4. Hard char cut             — only when nothing better exists
+
+    Replaces the previous pure-character chunker after the eval revealed
+    mid-word splits ("issioning of polysilicon...") hurt both bi-encoder
+    embedding quality and cross-encoder rerank scores.
+    """
     if len(text) <= size:
-        return [text]
-    chunks = []
+        return [text.strip()] if text.strip() else []
+
+    chunks: list[str] = []
     i = 0
     n = len(text)
+
     while i < n:
-        end = min(i + size, n)
-        chunks.append(text[i:end])
-        if end >= n:
+        ideal_end = min(i + size, n)
+        if ideal_end >= n:
+            chunk = text[i:n].strip()
+            if chunk:
+                chunks.append(chunk)
             break
-        i = end - overlap
+
+        # Look back up to search_window chars for the best split point.
+        window_start = max(i + 1, ideal_end - search_window)
+        best_split = None
+        for pat in (_PARAGRAPH_BREAK_RE, _SENTENCE_END_RE, _WORD_BREAK_RE):
+            matches = list(pat.finditer(text, window_start, ideal_end))
+            if matches:
+                best_split = matches[-1].end()  # latest match — closest to ideal
+                break
+
+        if best_split is None or best_split <= i:
+            best_split = ideal_end  # hard cut fallback
+
+        chunk = text[i:best_split].strip()
+        if chunk:
+            chunks.append(chunk)
+
+        # Apply overlap, but snap it to the next clean word boundary so the
+        # following chunk also STARTS on a clean boundary (not mid-word).
+        overlap_target = best_split - overlap
+        if overlap_target <= i:
+            next_start = best_split
+        else:
+            ws_match = _WORD_BREAK_RE.search(text, overlap_target, best_split)
+            next_start = ws_match.end() if ws_match else best_split
+        i = next_start
+
     return chunks
 
 
