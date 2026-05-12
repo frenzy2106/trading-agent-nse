@@ -25,6 +25,7 @@ import argparse
 import json
 import logging
 import os
+import statistics
 import sys
 import time
 from datetime import datetime
@@ -156,10 +157,29 @@ def truncate_chunks_for_save(chunks: list[dict], cap: int = 200) -> list[dict]:
     ]
 
 
+def _agg(scores: list[float | None]) -> dict:
+    """Aggregate a list of N CtxPrec scores (some may be None) into mean/std/spread."""
+    valid = [s for s in scores if s is not None]
+    if not valid:
+        return {"mean": None, "std": None, "n_valid": 0, "values": scores}
+    return {
+        "mean": sum(valid) / len(valid),
+        "std": statistics.stdev(valid) if len(valid) > 1 else 0.0,
+        "n_valid": len(valid),
+        "min": min(valid),
+        "max": max(valid),
+        "values": scores,
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(description="Eval RAG retrieval against golden dataset")
     parser.add_argument("--limit", type=int, help="Process only first N entries (smoke test)")
     parser.add_argument("--out", type=str, help="Override output filename")
+    parser.add_argument(
+        "--runs", type=int, default=1,
+        help="Run Phase B (LLM-judge) N times to average over judge variance. Default 1.",
+    )
     args = parser.parse_args()
 
     entries = json.loads(GOLDEN_PATH.read_text(encoding="utf-8"))
@@ -170,6 +190,7 @@ def main():
     print("\n=== Commentary RAG Eval ===")
     print(f"Golden entries: {len(entries)}")
     print(f"Judge model:    deepseek/{judge_model}")
+    print(f"Phase B runs:   {args.runs} {'(multi-run averaging)' if args.runs > 1 else '(single run)'}")
     print()
 
     # Phase A: retrieval + theme match
@@ -195,35 +216,82 @@ def main():
         status = "OK" if n_hits == n_themes else f"MISS({','.join(theme['misses'])})"
         print(f"  [{i}/{len(entries)}] {entry['id']:<26s}  themes {n_hits}/{n_themes}  chunks {len(ret['chunks']):>2}  {status}")
 
-    # Phase B: Ragas LLM-as-judge
+    # Phase B: Ragas LLM-as-judge (looped for variance averaging if --runs > 1)
     print()
-    print("Phase B — Ragas LLM-as-judge (context precision with reference)")
+    print(f"Phase B — Ragas LLM-as-judge ({args.runs} run{'s' if args.runs > 1 else ''})")
     print("-" * 60)
     judge = build_judge()
-    cp_scores = run_ragas(rows, judge)
-    for row, score in zip(rows, cp_scores):
-        row["context_precision"] = score
+
+    # all_run_scores[run_i][entry_i] = score
+    all_run_scores: list[list[float | None]] = []
+    for run_i in range(args.runs):
+        if args.runs > 1:
+            print(f"\n  --- Run {run_i + 1}/{args.runs} ---")
+        cp_scores = run_ragas(rows, judge)
+        all_run_scores.append(cp_scores)
+        if args.runs > 1:
+            run_mean = statistics.mean([s for s in cp_scores if s is not None] or [0.0])
+            print(f"  Run {run_i + 1} mean CtxPrec: {run_mean:.3f}")
+
+    # Transpose: per_entry_scores[entry_i] = [scores across N runs]
+    per_entry_scores: list[list[float | None]] = []
+    for entry_idx in range(len(rows)):
+        per_entry_scores.append([all_run_scores[r][entry_idx] for r in range(args.runs)])
+
+    # Attach per-entry aggregates to rows
+    for row, scores in zip(rows, per_entry_scores):
+        agg = _agg(scores)
+        row["context_precision"] = agg["mean"]
+        row["context_precision_std"] = agg["std"]
+        row["context_precision_runs"] = scores  # list of N scores
+        row["context_precision_n_valid"] = agg["n_valid"]
 
     # Render summary
     print()
-    print("=" * 60)
-    print(f"{'ID':<26s}  {'Themes':>8s}  {'CtxPrec':>9s}")
-    print("-" * 60)
+    print("=" * 80)
+    if args.runs > 1:
+        header = f"{'ID':<26s}  {'Themes':>8s}  {'CtxPrec (mean ± std)':>22s}  per-run"
+    else:
+        header = f"{'ID':<26s}  {'Themes':>8s}  {'CtxPrec':>9s}"
+    print(header)
+    print("-" * 80)
     for row in rows:
         n_hits = len(row["theme_hits"])
         n_themes = len(row["theme_hits"]) + len(row["theme_misses"])
         themes_str = f"{n_hits}/{n_themes}"
         cp = row.get("context_precision")
+        std = row.get("context_precision_std")
         cp_str = f"{cp:.3f}" if cp is not None else "n/a"
-        print(f"{row['id']:<26s}  {themes_str:>8s}  {cp_str:>9s}")
-    print("-" * 60)
+        if args.runs > 1:
+            std_str = f"± {std:.3f}" if std is not None else ""
+            runs = row.get("context_precision_runs", [])
+            runs_str = "[" + ", ".join(f"{s:.2f}" if s is not None else "n/a" for s in runs) + "]"
+            print(f"{row['id']:<26s}  {themes_str:>8s}  {cp_str:>10s} {std_str:>11s}  {runs_str}")
+        else:
+            print(f"{row['id']:<26s}  {themes_str:>8s}  {cp_str:>9s}")
+    print("-" * 80)
 
     # Aggregates
     avg_theme = sum(r["theme_ratio"] for r in rows) / len(rows) if rows else 0.0
     cps = [r["context_precision"] for r in rows if r["context_precision"] is not None]
     avg_cp = sum(cps) / len(cps) if cps else None
     cp_str = f"{avg_cp:.3f}" if avg_cp is not None else "n/a"
-    print(f"{'MEAN':<26s}  {avg_theme*100:>7.1f}%  {cp_str:>9s}")
+    # Spread of the per-entry means — how much variance is there across entries?
+    if len(cps) > 1:
+        across_entries_std = statistics.stdev(cps)
+        cp_str = f"{cp_str} ± {across_entries_std:.3f}"
+    print(f"{'MEAN (across entries)':<26s}  {avg_theme*100:>7.1f}%  {cp_str:>22s}")
+    if args.runs > 1:
+        # Also report: spread of per-run aggregate means — how much variance from judge alone?
+        per_run_means = []
+        for run_i in range(args.runs):
+            run_scores = [all_run_scores[run_i][i] for i in range(len(rows))]
+            valid = [s for s in run_scores if s is not None]
+            if valid:
+                per_run_means.append(sum(valid) / len(valid))
+        if len(per_run_means) > 1:
+            run_std = statistics.stdev(per_run_means)
+            print(f"{'(judge variance)':<26s}  {'':>8s}  per-run means: {per_run_means} (std={run_std:.3f})")
     print(f"  (n={len(rows)} entries, judge=deepseek/{judge_model})")
 
     # Save (with truncated chunks to keep file small/inspectable)
@@ -234,9 +302,11 @@ def main():
         "run_id": timestamp,
         "judge_model": f"deepseek/{judge_model}",
         "n_entries": len(rows),
+        "n_runs": args.runs,
         "aggregates": {
             "mean_theme_ratio": round(avg_theme, 4),
             "mean_context_precision": round(avg_cp, 4) if avg_cp is not None else None,
+            "context_precision_std_across_entries": round(across_entries_std, 4) if len(cps) > 1 else None,
         },
         "rows": [
             {
@@ -248,7 +318,10 @@ def main():
                 "theme_hits": r["theme_hits"],
                 "theme_misses": r["theme_misses"],
                 "theme_ratio": r["theme_ratio"],
-                "context_precision": r["context_precision"],
+                "context_precision_mean": r["context_precision"],
+                "context_precision_std": r.get("context_precision_std"),
+                "context_precision_runs": r.get("context_precision_runs"),
+                "context_precision_n_valid": r.get("context_precision_n_valid"),
                 "retrieval_latency_s": r["retrieval_latency_s"],
                 "retrieval_error": r["retrieval_error"],
                 "chunks_truncated": truncate_chunks_for_save(r["chunks"]),

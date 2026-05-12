@@ -25,7 +25,10 @@ from tools.commentary import COLLECTION_NAME, EMBED_MODEL, VECTORSTORE_PATH
 logger = logging.getLogger(__name__)
 
 CONCALLS_DIR = Path("data/concalls")
-CHUNK_CHARS = 1000
+CHUNK_CHARS = 1500  # bumped from 1000 after INOXINDIA-growth-01 regression diagnosis:
+                    # 1000-char chunks were splitting (order-book number + 63% export
+                    # fact) into separate context-poor chunks. 1500 preserves enough
+                    # surrounding context for self-supporting claims.
 CHUNK_OVERLAP = 150
 EMBED_BATCH = 64
 # How far back from the ideal endpoint to search for a clean split.
