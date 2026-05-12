@@ -1,12 +1,18 @@
 """
 News + earnings calendar tool — fetches:
   - Next scheduled earnings date (and consensus EPS estimate, if available)
-  - Last reported earnings date + EPS surprise vs consensus
-  - Recent headlines (top 5) about the ticker
+  - Last reported earnings date + EPS surprise vs consensus  → yfinance
+  - Recent headlines (top 5) about the ticker                → Google News RSS
 
-All from yfinance — no separate API key needed. Note that yfinance news quality
-varies by name: large-caps get plenty of (sometimes off-topic) coverage; smaller
-names may have only a few items.
+Why Google News RSS for headlines: tested against yfinance and Tavily News
+on Indian small/mid-caps. yfinance returns 0-3 items and often off-topic
+(e.g. for MTARTECH it surfaced US-side Bloom Energy news instead of MTAR
+stories from Indian financial press). Tavily News doesn't crawl Indian
+financial press deeply enough — top relevance scores capped at 0.27.
+Google News RSS with en-IN locale + `when:30d` consistently surfaces
+Moneycontrol, ET, Business Standard, NDTV Profit, CNBC TV18, Trade Brains.
+
+We keep yfinance for earnings dates because Google News doesn't have that.
 
 The LLM is responsible for filtering relevance — we surface what we get and let
 it decide which headlines actually pertain to the company.
@@ -15,10 +21,21 @@ it decide which headlines actually pertain to the company.
 import logging
 import time
 from datetime import date
+from urllib.parse import quote_plus
+
+import feedparser
 
 from ticker_utils import to_plain, to_yfinance
 
 logger = logging.getLogger(__name__)
+
+GOOGLE_NEWS_RSS = "https://news.google.com/rss/search"
+
+# Manual longName overrides for tickers where yfinance .info returns None.
+# Add to this as needed (recent IPOs, name changes, etc.).
+TICKER_NAME_OVERRIDES = {
+    "PNGJL": "P N Gadgil Jewellers",
+}
 
 
 def _earnings_block(yticker, today: date) -> dict:
@@ -81,32 +98,68 @@ def _earnings_block(yticker, today: date) -> dict:
     return out
 
 
-def _news_block(yticker, limit: int = 5) -> list[dict]:
-    """Top N recent headlines with title, summary (truncated), date, provider."""
-    items: list[dict] = []
+def _resolve_company_name(yticker, plain_ticker: str) -> str | None:
+    """Get the company's longName for use as a news search query.
+
+    Falls back to manual override map if yfinance .info returns nothing
+    (common for recent IPOs like PNGJL).
+    """
     try:
-        news = yticker.news or []
+        info = yticker.info or {}
+        name = info.get("longName") or info.get("shortName")
+        if name:
+            return name
     except Exception as e:
-        logger.warning("news fetch failed: %s", e)
+        logger.warning("longName resolve failed for %s: %s", plain_ticker, e)
+    return TICKER_NAME_OVERRIDES.get(plain_ticker)
+
+
+def _news_block(yticker, plain_ticker: str, limit: int = 5) -> list[dict]:
+    """Top N recent headlines from Google News RSS (en-IN locale, last 30 days).
+
+    Falls back to ticker-only query if no company name is resolvable.
+    """
+    items: list[dict] = []
+    company_name = _resolve_company_name(yticker, plain_ticker)
+
+    if company_name:
+        query = f"{company_name} share price when:30d"
+    else:
+        query = f"{plain_ticker} NSE stock when:30d"
+
+    url = f"{GOOGLE_NEWS_RSS}?q={quote_plus(query)}&hl=en-IN&gl=IN&ceid=IN:en"
+    logger.info("news query | ticker=%s name=%s", plain_ticker, company_name)
+
+    try:
+        feed = feedparser.parse(url)
+    except Exception as e:
+        logger.warning("Google News RSS fetch failed for %s: %s", plain_ticker, e)
         return items
 
-    for raw in news[:limit]:
-        if not isinstance(raw, dict):
-            continue
-        content = raw.get("content") or {}
-        title = content.get("title")
+    for entry in feed.entries[:limit]:
+        title = entry.get("title")
         if not title:
             continue
-        summary = content.get("summary") or content.get("description") or ""
+
+        # Source comes back two ways: dict {title, href} or trailing " - Source" in title.
+        provider = None
+        src_obj = entry.get("source")
+        if isinstance(src_obj, dict):
+            provider = src_obj.get("title")
+        if not provider and " - " in title:
+            provider = title.rsplit(" - ", 1)[-1].strip()
+
+        summary = entry.get("summary") or ""
         if len(summary) > 300:
             summary = summary[:300] + "…"
-        provider = (content.get("provider") or {}).get("displayName") if isinstance(content.get("provider"), dict) else None
+
         items.append({
             "title": title,
             "summary": summary,
-            "date": content.get("pubDate"),
+            "date": entry.get("published"),
             "provider": provider,
         })
+
     return items
 
 
@@ -120,13 +173,13 @@ def get_news_and_earnings(ticker: str, as_of_date: date | None = None) -> dict:
     yticker = yf.Ticker(to_yfinance(plain))
 
     earnings = _earnings_block(yticker, today)
-    news = _news_block(yticker, limit=5)
+    news = _news_block(yticker, plain, limit=5)
 
     notes: list[str] = []
     if not earnings["next_earnings_date"] and not earnings["last_earnings_date"]:
         notes.append("No earnings calendar data found from yfinance for this ticker.")
     if not news:
-        notes.append("No recent news headlines returned from yfinance.")
+        notes.append("No recent news headlines returned from Google News RSS.")
 
     snapshot = {
         "ticker": plain,

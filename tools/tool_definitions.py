@@ -15,6 +15,8 @@ from langchain_core.tools import tool
 
 from tools.analyst import get_analyst_consensus as _analyst
 from tools.commentary import get_management_commentary as _commentary
+from tools.commodity import SUPPORTED_NAMES as _COMMODITY_NAMES
+from tools.commodity import get_commodity_snapshot as _commodity
 from tools.fundamentals import get_fundamentals_snapshot as _fundamentals
 from tools.macro import get_macro_snapshot as _macro
 from tools.news import get_news_and_earnings as _news
@@ -177,6 +179,37 @@ def get_management_commentary(ticker: str, query: str, k: int = 5) -> str:
     """
     try:
         return json.dumps(_commentary(ticker, query, k), default=str)
+    except Exception as e:
+        return _serialise_error(e)
+
+
+@tool
+def get_commodity_snapshot(name: str) -> str:
+    """
+    Fetch a price snapshot for a commodity (or commodity-proxy ETF) to support
+    input-cost reasoning for stocks with raw-material exposure.
+
+    Returns spot price (USD), 1d/5d/1m/3m/6m/12m % changes, SMA-50/200 + trend
+    regime (uptrend/downtrend/sideways/insufficient_history), ATR-14, 20-day
+    realized volatility, and 52-week range.
+
+    Supported names (free-form, case-insensitive): gold, silver, platinum,
+    palladium, copper, aluminum/aluminium, crude/wti, brent, natural_gas/ng,
+    gasoline, heating_oil, cotton, lithium, steel, uranium, rare_earth.
+
+    Use this AFTER confirming a stock's material input-cost exposure — typically
+    via management commentary ("raw material costs" / "input cost mix" query)
+    or obvious sector mapping (jeweller → gold, refiner → crude, EV → lithium).
+    Don't call it speculatively for stocks without commodity-linked margins.
+
+    On error (unknown name, fetch failure), returns JSON like
+    {"error": "...", "kind": "unknown_commodity", "supported": [...]}.
+
+    Args:
+        name: commodity name, e.g. "gold", "copper", "brent", "natural_gas"
+    """
+    try:
+        return json.dumps(_commodity(name), default=str)
     except Exception as e:
         return _serialise_error(e)
 

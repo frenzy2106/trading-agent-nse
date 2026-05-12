@@ -5,14 +5,11 @@ Usage:
     # Interactive: prompts for question, no extra context
     python lg_agent.py
 
-    # One-shot with context, sources, and macro events log auto-loaded
+    # One-shot with free-text context and sources
     python lg_agent.py "Should I buy RELIANCE for a 3-month hold?" \\
         --context "Iran tensions, oil at 90+" \\
         --pdf research/reliance_q3.pdf \\
         --url https://www.reuters.com/article/...
-
-    # Skip the persistent macro events log for this run
-    python lg_agent.py "..." --no-macro
 """
 
 import argparse
@@ -35,6 +32,7 @@ from llm_factory import get_llm, get_provider_and_model
 from persistence import build_trace, parse_header, save_run
 from tools.tool_definitions import (
     get_analyst_consensus,
+    get_commodity_snapshot,
     get_fundamentals_snapshot,
     get_macro_snapshot,
     get_management_commentary,
@@ -60,6 +58,7 @@ TOOLS = [
     get_news_and_earnings,
     get_analyst_consensus,
     get_management_commentary,
+    get_commodity_snapshot,
 ]
 
 
@@ -147,11 +146,6 @@ def _build_argparser() -> argparse.ArgumentParser:
     p.add_argument("--pdf", action="append", default=[], help="Path to a PDF source (repeatable)")
     p.add_argument("--md", action="append", default=[], help="Path to a markdown source (repeatable)")
     p.add_argument("--url", action="append", default=[], help="URL of an article source (repeatable)")
-    p.add_argument(
-        "--no-macro",
-        action="store_true",
-        help="Skip auto-loading macro_events.md for this run",
-    )
     return p
 
 
@@ -165,19 +159,16 @@ if __name__ == "__main__":
     print("NOT FINANCIAL ADVICE. For educational and research purposes only.")
     print(f"Provider: {provider}  |  Model: {model}")
 
-    # Build context once per CLI invocation. Macro events apply to all runs in this session.
+    # Build context once per CLI invocation.
     context_block = build_context(
         free_text=args.context,
         pdfs=args.pdf,
         urls=args.url,
         mds=args.md,
-        include_macro=not args.no_macro,
     )
     context_text = context_block.render()
     if not context_block.is_empty():
         bits = []
-        if context_block.macro_events:
-            bits.append(f"{context_block.macro_events.count('## ')} macro events")
         if context_block.sources:
             bits.append(f"{len(context_block.sources)} source(s)")
         if context_block.free_text:

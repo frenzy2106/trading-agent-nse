@@ -11,3 +11,4 @@ pypdf
 trafilatura
 chromadb
 sentence-transformers
+feedparser

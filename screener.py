@@ -219,11 +219,6 @@ def _build_argparser() -> argparse.ArgumentParser:
         default=DEFAULT_QUESTION,
         help="Question template, must contain {ticker}",
     )
-    p.add_argument(
-        "--no-macro",
-        action="store_true",
-        help="Skip auto-loading macro_events.md for this run",
-    )
     return p
 
 
@@ -241,11 +236,10 @@ def main():
     print(f"Provider: {provider} | Model: {model}")
     print(f"Watchlist: {args.watchlist} | Tickers: {len(tickers)}")
     print(f"Question: {args.question}")
-    print(f"Macro events: {'skipped' if args.no_macro else 'loaded'}")
     print()
 
     # Build context once — applied across all tickers in this scan
-    ctx_block = build_context(include_macro=not args.no_macro)
+    ctx_block = build_context()
     context_text = ctx_block.render()
     if context_text:
         print(f"Context: {len(context_text)} chars\n")
