@@ -124,9 +124,15 @@ def render_headline_layer(card: FactCard) -> str:
     else:
         lines.append("  (none extracted)")
 
-    # ---- Segments (slim view) ----
+    # ---- Segments (with key developments per segment) ----
+    #
+    # Each segment carries its own metrics AND key_developments. Surfacing
+    # key_developments inline is what prevents the cross-segment confusion
+    # we hit in eval (the agent conflated Industrial Gas "Kalol/Kandla 85%"
+    # with the Beverage Keg plant). The explicit per-segment structure makes
+    # it obvious which facts belong to which segment.
     if card.segments:
-        lines.append("\n### Segments")
+        lines.append("\n### Segments (each segment's data is scoped to that segment only — do not cross-attribute)")
         for seg in card.segments:
             head = f"  - **{seg.name}**"
             bits = []
@@ -139,6 +145,8 @@ def render_headline_layer(card: FactCard) -> str:
             if bits:
                 head += " — " + ", ".join(bits)
             lines.append(head)
+            for kd in seg.key_developments:
+                lines.append(f"      · {kd}")
 
     # ---- Order book ----
     if card.order_book is not None:
