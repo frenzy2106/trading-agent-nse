@@ -96,12 +96,16 @@ def render_headline_layer(card: FactCard) -> str:
     """Compact text block for system-prompt injection.
 
     Includes Layer 1 (headline financials) + a slim view of Layer 2/3:
-      - segments with name + revenue/margin (no key_developments)
+      - segments with name + revenue/margin + key_developments
       - order book one-liner
       - top guidance items
 
-    Deeper content (themes, risks, segment narratives, capex, etc.) is left to
-    the get_fact_card_detail tool so we don't blow out the system prompt.
+    Themes/risks/pricing/demand are deliberately NOT auto-injected.
+    Empirically (see commit log + agent eval runs), adding the qualitative
+    summaries into the prompt produced offsetting wins and losses that
+    averaged out within judge variance, while costing ~30% more tokens.
+    For qualitative questions the agent can still call
+    `get_fact_card_detail(ticker, 'themes' | 'risks' | 'commentary')`.
     """
     lines: list[str] = []
     lines.append(f"## FactCard | {card.ticker} | {card.fiscal_period} | call_date {card.call_date}")

@@ -61,5 +61,194 @@
     "query": "Beverage keg plant capacity utilization and Heineken contracts",
     "reference": "Keg plant is running at approximately 23% utilization (~70,000 kegs on order against 3 lakh annual capacity). Sample approvals from Heineken, AB InBev, Asahi and Carlsberg are pending. Management hopes for 80,000-100,000 orders by March-end.",
     "must_contain_themes": ["keg", "Heineken", "capacity", "utilization"]
+  },
+  {
+    "id": "HDFCBANK-guidance-01",
+    "ticker": "HDFCBANK",
+    "query": "FY26 loan growth, deposit growth and ROA guidance",
+    "reference": "FY26 loan growth target is 12%, deposit growth around 14.4%, and return on assets is expected to remain stable at 1.9%. Management is maintaining LCR (liquidity coverage ratio) in the 110-120% range. Granular deposit franchise improvement is a strategic priority.",
+    "must_contain_themes": ["loan growth", "deposit", "12", "ROA"]
+  },
+  {
+    "id": "ICICIBANK-credit-01",
+    "ticker": "ICICIBANK",
+    "query": "Credit cost guidance and asset quality outlook for FY26",
+    "reference": "Management guides credit cost under 50 basis points for FY2026. Asset quality remains strong with low credit cost. Growth strategy is risk-calibrated and profitability-focused. Mortgage growth is being driven by benchmark stability.",
+    "must_contain_themes": ["credit cost", "50", "asset quality", "growth"]
+  },
+  {
+    "id": "HAVELLS-segment-01",
+    "ticker": "HAVELLS",
+    "query": "Lloyd segment performance and summer impact on cooling products",
+    "reference": "Lloyd segment (consumer durables, including ACs) was hit by a delayed summer affecting cooling product demand. Management took price hikes across categories to pass through input cost pressure. Demand outlook is uncertain. The solar business within Others segment is growing.",
+    "must_contain_themes": ["Lloyd", "summer", "cooling", "price hike"]
+  },
+  {
+    "id": "MTARTECH-growth-01",
+    "ticker": "MTARTECH",
+    "query": "FY27 revenue growth guidance and order book trajectory",
+    "reference": "FY27 revenue growth guidance is 50%, supported by a targeted order book of INR2,800 crores by end of FY26. FY26 growth is expected at 30-35% and EBITDA margin at 21% plus or minus 100 bps. Clean Energy Fuel Cells and Aerospace & Defence are the principal growth drivers, with nuclear sector ramp-up as an additional driver.",
+    "must_contain_themes": ["FY27", "50", "2,800", "order book"]
+  },
+  {
+    "id": "PNGJL-guidance-01",
+    "ticker": "PNGJL",
+    "query": "FY27 revenue guidance and EBITDA margin outlook",
+    "reference": "FY27 revenue guidance is INR11,500-12,000 crores, implying 20-25% growth over FY26. FY26 revenue is guided at INR9,500-10,000 crores. Annualized sustainable EBITDA margin guidance is 7-7.25%. Growth is driven by festive/wedding demand, geographic expansion, and rising studded jewelry mix.",
+    "must_contain_themes": ["FY27", "11,500", "20", "EBITDA"]
+  },
+  {
+    "id": "SBIN-nim-01",
+    "ticker": "SBIN",
+    "query": "FY27 NIM, credit growth and credit cost guidance",
+    "reference": "Domestic NIM guidance for FY27 is above 3%. Credit growth target is 13-15% and credit cost is guided at 50 basis points. Through-cycle ROA target is over 1%. Asset quality is at decadal lows and management is focusing on relationship value and fee income.",
+    "must_contain_themes": ["NIM", "3", "credit growth", "13"]
+  },
+  {
+    "id": "SHRIRAMFIN-aum-01",
+    "ticker": "SHRIRAMFIN",
+    "query": "FY27 AUM growth, NIM guidance and impact of MUFG capital infusion",
+    "reference": "AUM growth target for FY27 is 18%. FY27 budgeted NIM is 8.5%. The MUFG capital infusion strengthens capital adequacy and supports growth ambition. MSME growth target is 13-15%. Long-term cost-to-income ratio target is 26-27%. FY27 outlook is cautious.",
+    "must_contain_themes": ["AUM", "MUFG", "NIM", "18"]
+  },
+  {
+    "id": "SIS-growth-01",
+    "ticker": "SIS",
+    "query": "Q4 FY26 revenue and segment mix across India, International and Facility Management",
+    "reference": "Q4 FY26 revenue was INR4,489 crore, up 31% YoY, with EBITDA margin of 4.6%. The business is split across three segments: India Security, International Security, and Facility Management. Multi-year revenue growth target is 15% with ROE over 15%. Labor codes are flagged as an industry inflection point. APS acquisition integration is underway.",
+    "must_contain_themes": ["4,489", "31", "International", "Facility"]
+  },
+  {
+    "id": "TITAN-jewellery-01",
+    "ticker": "TITAN",
+    "query": "Long-term revenue growth outlook and gold price impact on jewellery demand",
+    "reference": "Long-term (3-5 year) revenue growth CAGR target is 15-20%. Gold price has impacted demand and product mix. The exchange program is driving buyer growth. Industry formalisation is a structural tailwind. Jewellery is the dominant segment alongside Watches, CaratLane, and International.",
+    "must_contain_themes": ["15-20", "gold price", "exchange", "formalization"]
+  },
+  {
+    "id": "RELIANCE-capex-01",
+    "ticker": "RELIANCE",
+    "query": "New Energy capex scale and battery giga factory timeline",
+    "reference": "Solar giga factory has been expanded to 20 GW fully integrated capacity, with commissioning across polysilicon, ingot, wafer and glass progressing over the next few quarters. Battery giga factory is scaling to 100 GWh, with the first phase under construction and ramp planned during the year. Vinyl and PTA projects are also under execution.",
+    "must_contain_themes": ["20 GW", "battery", "100 GWh", "commissioning"]
+  },
+  {
+    "id": "TCS-ai-01",
+    "ticker": "TCS",
+    "query": "AI revenue trajectory and HyperVault progress",
+    "reference": "Annualised AI revenue surpassed 2.3 billion dollars in Q4. HyperVault AI infrastructure build-out is targeting 1 GW capacity. TCS also has a 100 MW capacity partnership with OpenAI. AI is embedded across mega deal wins. Build-Partner-Acquire is the underlying strategy.",
+    "must_contain_themes": ["AI", "2.3", "HyperVault", "1 GW"]
+  },
+  {
+    "id": "INOXINDIA-lng-01",
+    "ticker": "INOXINDIA",
+    "query": "LNG Solutions segment performance, market share and capacity additions",
+    "reference": "LNG Solutions segment continued strong growth in Q3 FY26 with new orders including 2 marine fuel tanks of 150 cubic meters from a European customer and 2 LNG storage tanks of 500 cubic meters for African terminal projects. INOX crossed 250 LNG semi-trailers operating in India with over 85% market share. A fully automated serial production line for LNG fuel tanks was commissioned at Kalol.",
+    "must_contain_themes": ["LNG", "85", "marine", "Kalol"]
+  },
+  {
+    "id": "HDFCBANK-strategy-01",
+    "ticker": "HDFCBANK",
+    "query": "Technology investments and granular deposit franchise strategy",
+    "reference": "Technology investments are positioned to drive future operating leverage rather than near-term cost reduction. Management is focused on building a granular deposit franchise, with retail loan growth momentum improving and corporate loan growth sustained. ROA is the headline profitability anchor (FY26 stable at 1.9%), rather than NIM in isolation.",
+    "must_contain_themes": ["technology", "granular", "deposit", "ROA"]
+  },
+  {
+    "id": "HDFCBANK-nim-01",
+    "ticker": "HDFCBANK",
+    "query": "NIM pressure from deposit mix and rate cycle outlook",
+    "reference": "Management has flagged NIM pressure from deposit mix and the rate cycle as a stated risk. The bank is choosing to anchor on ROA (FY26 stable at 1.9%) rather than NIM. FX volatility has also reduced treasury volumes. Third-party distribution fee growth has been modest.",
+    "must_contain_themes": ["NIM", "deposit", "ROA", "rate cycle"]
+  },
+  {
+    "id": "ICICIBANK-growth-01",
+    "ticker": "ICICIBANK",
+    "query": "Loan growth drivers across retail, mortgage and corporate banking",
+    "reference": "Loan growth is healthy with stable deposits. Mortgage growth is being driven by benchmark stability. The corporate and business banking portfolio is resilient. Strategy is risk-calibrated and profitability-focused, not chasing volume. Asset quality remains strong with credit cost guided under 50 basis points for FY2026.",
+    "must_contain_themes": ["mortgage", "corporate", "credit cost", "risk-calibrated"]
+  },
+  {
+    "id": "ICICIBANK-risk-01",
+    "ticker": "ICICIBANK",
+    "query": "West Asia conflict impact and business banking portfolio risks",
+    "reference": "Management flagged the West Asia conflict as a source of macro uncertainty. There is a potential impact on the business banking portfolio. Credit card revolvers have been declining. Government SA (savings account) balances are seeing outflows. Despite these, credit cost guidance is under 50 basis points for FY2026 and asset quality remains strong.",
+    "must_contain_themes": ["West Asia", "business banking", "credit card", "credit cost"]
+  },
+  {
+    "id": "HAVELLS-capex-01",
+    "ticker": "HAVELLS",
+    "query": "Cables and Wires capacity expansion and Goldi Solar investment",
+    "reference": "Havells has announced INR 800 crore capex for Cables and Wires capacity expansion in FY27. A new R&D centre is planned over the next two to two and a half years. The Others segment grew 48% driven by solar, supported by a Rs 600 crore investment in Goldi Solar.",
+    "must_contain_themes": ["800", "cables", "R&D", "Goldi"]
+  },
+  {
+    "id": "HAVELLS-cables-01",
+    "ticker": "HAVELLS",
+    "query": "Cables and Wires segment growth and industrial vs domestic mix",
+    "reference": "Cables and Wires posted value growth of 14% with volume growth of 6%. The industrial cable segment grew faster than the domestic wire segment, where destocking occurred in the first half of Q4. The segment is a key growth pillar for Havells with INR 800 crore capacity expansion planned in FY27.",
+    "must_contain_themes": ["14", "6", "industrial", "destocking"]
+  },
+  {
+    "id": "MTARTECH-margin-01",
+    "ticker": "MTARTECH",
+    "query": "FY26 EBITDA margin guidance and working capital trajectory",
+    "reference": "EBITDA margin guidance for FY26 is 21% plus or minus 100 basis points. Margin improvement is expected through operating leverage as scale builds. Working capital days are guided at 200 to 210 days for FY27. Q3 FY26 EBITDA was INR64 crore.",
+    "must_contain_themes": ["21", "operating leverage", "working capital", "200"]
+  },
+  {
+    "id": "MTARTECH-nuclear-01",
+    "ticker": "MTARTECH",
+    "query": "Nuclear sector opportunity and clean energy capacity expansion",
+    "reference": "Nuclear sector is at a ramp-up phase and is one of the key growth drivers alongside Clean Energy Fuel Cells and Aerospace & Defence. Clean energy capacity is expanding in two phases: from 12,000 to 20,000 boxes (Phase 2, INR 60 crore, by end of FY27), and 20,000 to 30,000 boxes (Phase 3, INR 40 crore, in FY28).",
+    "must_contain_themes": ["nuclear", "12,000", "20,000", "Phase"]
+  },
+  {
+    "id": "PNGJL-segment-01",
+    "ticker": "PNGJL",
+    "query": "Store expansion plan, e-commerce, and franchisee growth",
+    "reference": "Store count is guided to reach 78-80 stores by March 2026 and 105 stores by March 2027. PNG operates three segments: Retail, E-commerce, and Franchisee. New PNG store capex is INR 2 crore per store and lifestyle store capex is INR 0.7 crore. Lifestyle business contribution is targeted at 10%.",
+    "must_contain_themes": ["78", "105", "franchisee", "lifestyle"]
+  },
+  {
+    "id": "PNGJL-margin-01",
+    "ticker": "PNGJL",
+    "query": "EBITDA margin sustainability and studded jewellery mix trajectory",
+    "reference": "Annualised sustainable EBITDA margin guidance is 7-7.25%. PAT margin guidance is 3.75-4%. Gross margin guidance is 13-14%. Studded jewellery mix is targeted at 13-14% over the next 3-4 years, up from current levels. Margin expansion is driven by mix shift toward studded jewellery.",
+    "must_contain_themes": ["7", "13", "studded", "margin"]
+  },
+  {
+    "id": "SBIN-asset-01",
+    "ticker": "SBIN",
+    "query": "Asset quality outlook and ROA / ROE through-cycle targets",
+    "reference": "Asset quality is at decadal lows. Credit cost guidance is 50 basis points for FY27. Through-cycle ROA target is over 1% and ROE minimum is 15%. Cost-to-income ratio for FY27 is guided below 50%. ECL transition has been smooth.",
+    "must_contain_themes": ["asset quality", "50", "ROA", "ROE"]
+  },
+  {
+    "id": "SBIN-yono-01",
+    "ticker": "SBIN",
+    "query": "YONO digital transformation and fee income strategy",
+    "reference": "Digital transformation is anchored on the YONO platform. Strategy emphasises relationship value and fee income growth. Market share growth is being pursued at the district level. The CHAKRA initiative targets sunrise sectors. Liability franchise is strengthening.",
+    "must_contain_themes": ["YONO", "fee income", "district", "CHAKRA"]
+  },
+  {
+    "id": "SHRIRAMFIN-segments-01",
+    "ticker": "SHRIRAMFIN",
+    "query": "Segment-wise growth guidance for CV, PV, MSME and gold loans in FY27",
+    "reference": "Overall AUM growth target for FY27 is 18%. Segment-wise: CV (commercial vehicle) growth 15-18%, PV (passenger vehicle) growth more than 20%, MSME growth 13-15%, gold loan growth more than 30%. NIM is budgeted at 8.5%. New vehicle financing is gaining traction.",
+    "must_contain_themes": ["CV", "PV", "MSME", "gold loan"]
+  },
+  {
+    "id": "SIS-acquisition-01",
+    "ticker": "SIS",
+    "query": "APS acquisition integration and labor codes industry inflection",
+    "reference": "APS acquisition integration is underway and tracking to plan. Labor codes are flagged as an industry inflection point that should benefit organised players like SIS. Q4 FY26 set record revenue and margins. The 15-15 compounding formula (15% revenue growth, 15%+ ROE multi-year) anchors the long-term framing. The cash IPO has been deferred but remains on track.",
+    "must_contain_themes": ["APS", "labor codes", "15-15", "IPO"]
+  },
+  {
+    "id": "TITAN-segments-01",
+    "ticker": "TITAN",
+    "query": "Watches, CaratLane, and International segment outlook",
+    "reference": "Titan operates four segments: Jewelry (dominant), Watches, CaratLane, and International. Damas integration in the GCC faces geopolitical challenges. TEAL has growth opportunities. Byond LGD expansion plans are being executed. Gold price has impacted demand and mix across jewellery; the exchange program is driving buyer growth and industry formalisation is a structural tailwind.",
+    "must_contain_themes": ["Watches", "CaratLane", "Damas", "TEAL"]
   }
 ]
