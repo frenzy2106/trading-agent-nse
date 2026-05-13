@@ -15,6 +15,7 @@ Usage:
 import argparse
 import logging
 import os
+import re
 import sys
 import time
 from typing import Annotated
@@ -30,9 +31,11 @@ from typing_extensions import TypedDict
 from context_loader import build_context
 from llm_factory import get_llm, get_provider_and_model
 from persistence import build_trace, parse_header, save_run
+from tools.fact_card import get_fact_card, render_headline_layer
 from tools.tool_definitions import (
     get_analyst_consensus,
     get_commodity_snapshot,
+    get_fact_card_detail,
     get_fundamentals_snapshot,
     get_macro_snapshot,
     get_management_commentary,
@@ -40,6 +43,7 @@ from tools.tool_definitions import (
     get_technical_snapshot,
 )
 from prompts import SYSTEM_PROMPT
+from ticker_utils import to_plain
 
 load_dotenv()
 log_level = os.getenv("LOG_LEVEL", "INFO").upper()
@@ -59,7 +63,51 @@ TOOLS = [
     get_analyst_consensus,
     get_management_commentary,
     get_commodity_snapshot,
+    get_fact_card_detail,
 ]
+
+
+# Cheap regex over the user's question to pick the ticker for fact-card
+# injection. We need to do this BEFORE the agent's first tool call so the
+# fact card lands in the system prompt.
+_TICKER_RE = re.compile(r"\b[A-Z]{2,12}\b")
+
+
+def _guess_ticker_from_question(question: str) -> str | None:
+    """Best-effort ticker detection. Returns None if nothing plausible found.
+
+    The agent does its own ticker parsing too -- this is only used to decide
+    which fact card to pre-inject. False positives are harmless (we'll just
+    fail to find a card and skip injection).
+    """
+    candidates = _TICKER_RE.findall(question or "")
+    # Filter out common English words that look like tickers.
+    stop = {"BUY", "SELL", "HOLD", "I", "A", "ON", "THE", "IT", "IS", "OK", "NSE", "BSE",
+            "FY", "Q1", "Q2", "Q3", "Q4", "PE", "PB", "EPS", "USD", "INR", "USA", "AI",
+            "AND", "OR", "BUT", "FOR", "TO", "OF", "IN", "AS", "AT", "BY", "AM", "PM"}
+    for c in candidates:
+        if c in stop or len(c) < 3:
+            continue
+        return to_plain(c)
+    return None
+
+
+def _system_prompt_for_question(question: str) -> str:
+    """Append the fact card headline layer to the base system prompt when a
+    plausible ticker is detected and a fact card exists.
+
+    Returns the unchanged SYSTEM_PROMPT when no card is available -- the agent
+    still falls back to RAG via get_management_commentary in that case.
+    """
+    ticker = _guess_ticker_from_question(question)
+    if not ticker:
+        return SYSTEM_PROMPT
+    card = get_fact_card(ticker)
+    if card is None:
+        return SYSTEM_PROMPT
+    headline = render_headline_layer(card)
+    logger.info("fact card injected | ticker=%s call_date=%s", ticker, card.call_date)
+    return f"{SYSTEM_PROMPT}\n\n## Pre-extracted fact card (authoritative)\n\n{headline}"
 
 
 class AgentState(TypedDict):
@@ -70,7 +118,16 @@ def build_graph():
     llm = get_llm(tools=TOOLS)
 
     def chat_node(state: AgentState):
-        messages = [SystemMessage(content=SYSTEM_PROMPT)] + state["messages"]
+        # Pull the first HumanMessage to derive ticker for fact-card injection.
+        # The first message is always the user's question (possibly with a
+        # prepended <context> block); _guess_ticker_from_question tolerates both.
+        first_human = next(
+            (m for m in state["messages"] if isinstance(m, HumanMessage)),
+            None,
+        )
+        question = first_human.content if first_human is not None else ""
+        system_prompt = _system_prompt_for_question(question)
+        messages = [SystemMessage(content=system_prompt)] + state["messages"]
         return {"messages": [llm.invoke(messages)]}
 
     graph = StateGraph(AgentState)

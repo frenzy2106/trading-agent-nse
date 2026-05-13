@@ -17,6 +17,8 @@ from tools.analyst import get_analyst_consensus as _analyst
 from tools.commentary import get_management_commentary as _commentary
 from tools.commodity import SUPPORTED_NAMES as _COMMODITY_NAMES
 from tools.commodity import get_commodity_snapshot as _commodity
+from tools.fact_card import DETAIL_SECTIONS as _FACT_CARD_SECTIONS
+from tools.fact_card import get_fact_card_detail as _fact_card_detail
 from tools.fundamentals import get_fundamentals_snapshot as _fundamentals
 from tools.macro import get_macro_snapshot as _macro
 from tools.news import get_news_and_earnings as _news
@@ -210,6 +212,41 @@ def get_commodity_snapshot(name: str) -> str:
     """
     try:
         return json.dumps(_commodity(name), default=str)
+    except Exception as e:
+        return _serialise_error(e)
+
+
+@tool
+def get_fact_card_detail(ticker: str, section: str) -> str:
+    """
+    Retrieve a deeper section of the structured fact card for an NSE-listed
+    stock. The fact card is a pre-extracted, schema-validated JSON view of the
+    most recent earnings call -- every fact carries a verbatim source quote.
+
+    Headline financials, segments (slim), order book, and guidance are ALREADY
+    injected into your system prompt for this ticker when a fact card exists.
+    Use this tool only for the deeper layers.
+
+    Supported `section` values:
+      - "themes"          : key qualitative themes management emphasised
+      - "risks"           : risks management acknowledged
+      - "segments_detail" : full per-segment narratives incl. key_developments
+      - "capex"           : capital expenditure plans with timelines + status
+      - "geographic"      : revenue/order split by geography
+      - "capacity"        : installed capacity, utilisation, expansion
+      - "commentary"      : pricing power + demand-environment commentary
+      - "all"             : entire fact card JSON (use sparingly -- large)
+
+    On error returns JSON like {"error": "...", "kind": "no_fact_card"} -- if
+    you see no_fact_card, that ticker hasn't been processed yet; do not invent
+    content, say so plainly.
+
+    Args:
+        ticker: NSE ticker symbol, e.g. RELIANCE, INOXINDIA
+        section: one of the supported sections above
+    """
+    try:
+        return json.dumps(_fact_card_detail(ticker, section), default=str)
     except Exception as e:
         return _serialise_error(e)
 

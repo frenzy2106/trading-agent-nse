@@ -7,6 +7,7 @@ langgraph
 langchain-core
 langchain-openai
 langchain-groq
+openai  # used directly in ingest/extract_fact_card.py for JSON mode (bypasses LangChain)
 pypdf
 trafilatura
 chromadb
