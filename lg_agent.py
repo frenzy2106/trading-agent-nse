@@ -42,7 +42,7 @@ from tools.tool_definitions import (
     get_news_and_earnings,
     get_technical_snapshot,
 )
-from prompts import SYSTEM_PROMPT
+from prompts import EVAL_SYSTEM_PROMPT, SYSTEM_PROMPT
 from ticker_utils import to_plain
 
 load_dotenv()
@@ -96,18 +96,26 @@ def _system_prompt_for_question(question: str) -> str:
     """Append the fact card headline layer to the base system prompt when a
     plausible ticker is detected and a fact card exists.
 
-    Returns the unchanged SYSTEM_PROMPT when no card is available -- the agent
-    still falls back to RAG via get_management_commentary in that case.
+    Two env-var toggles support the eval harness:
+      AGENT_MODE=eval         -> use EVAL_SYSTEM_PROMPT (focused-answer override)
+      FACT_CARD_INJECTION=off -> skip fact card injection even if a card exists
+
+    Both default to production behaviour (full report + injection on).
     """
+    base = EVAL_SYSTEM_PROMPT if os.getenv("AGENT_MODE", "").lower() == "eval" else SYSTEM_PROMPT
+
+    if os.getenv("FACT_CARD_INJECTION", "on").lower() == "off":
+        return base
+
     ticker = _guess_ticker_from_question(question)
     if not ticker:
-        return SYSTEM_PROMPT
+        return base
     card = get_fact_card(ticker)
     if card is None:
-        return SYSTEM_PROMPT
+        return base
     headline = render_headline_layer(card)
     logger.info("fact card injected | ticker=%s call_date=%s", ticker, card.call_date)
-    return f"{SYSTEM_PROMPT}\n\n## Pre-extracted fact card (authoritative)\n\n{headline}"
+    return f"{base}\n\n## Pre-extracted fact card (authoritative)\n\n{headline}"
 
 
 class AgentState(TypedDict):
@@ -115,7 +123,11 @@ class AgentState(TypedDict):
 
 
 def build_graph():
-    llm = get_llm(tools=TOOLS)
+    # AGENT_MODE=eval pins temperature=0 so the same question produces the same
+    # answer across runs -- needed for the eval harness to measure judge
+    # variance in isolation from agent variance.
+    eval_mode = os.getenv("AGENT_MODE", "").lower() == "eval"
+    llm = get_llm(tools=TOOLS, temperature=0.0 if eval_mode else None)
 
     def chat_node(state: AgentState):
         # Pull the first HumanMessage to derive ticker for fact-card injection.
